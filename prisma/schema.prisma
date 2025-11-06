@@ -26,6 +26,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+  COD_PENDING
+  COD_VERIFIED
 }
 
 enum ShipmentStatus {
@@ -37,48 +39,67 @@ enum ShipmentStatus {
 }
 
 model Buyer {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String
-  phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  orders    Order[]
-  addresses Address[]
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  password             String
+  name                 String
+  phone                String?
+  isVerified           Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  orders               Order[]
+  addresses            Address[]
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 
   @@index([email])
 }
 
+model Verification {
+  id          String   @id @default(uuid())
+  destination String
+  channel     String
+  otp         String
+  transportId String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([destination])
+}
+
 model Seller {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  password        String
-  name            String
-  phone           String?
-  businessName    String
-  businessAddress String?
-  regNumber       String?   @unique
-  accountNumber   String?
-  ifscCode        String?
-  isVerified      Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  products        Product[]
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  password             String
+  name                 String
+  phone                String?
+  businessName         String
+  businessAddress      String?
+  regNumber            String?   @unique
+  accountNumber        String?
+  ifscCode             String?
+  isVerified           Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  products             Product[]
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 
   @@index([email])
   @@index([regNumber])
 }
 
 model Admin {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  password     String
-  name         String
-  phone        String?
-  isSuperAdmin Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  password             String
+  name                 String
+  phone                String?
+  isSuperAdmin         Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 
   @@index([email])
 }
@@ -177,6 +198,10 @@ model Order {
   shipment          Shipment?
   payment           Payment?
 
+  codConfirmedAt DateTime?
+  codVerifiedBy  String?
+  codNotes       String?
+
   @@index([buyerId])
   @@index([orderNumber])
   @@index([status])
@@ -238,7 +263,21 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  isCOD           Boolean       @default(false)
+  collectedBy     String?
+  collectedAt     DateTime?
+  codRemarks      String?
 
   @@index([orderId])
   @@index([transactionId])
+}
+
+model Highlight {
+  id        String   @id @default(uuid())
+  title     String
+  imageUrl  String
+  link      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
